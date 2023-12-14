@@ -3,7 +3,7 @@ from neo4j import GraphDatabase
 
 import glob
 import json
-
+import ray
 
 
 # Define Neo4j connection 
@@ -16,6 +16,7 @@ def create_driver():
 
 # Change txt files to json files
 # call ray
+@ray.remote
 def txt_to_json(DIR):
     for file in glob.glob(DIR+"/*.txt"):
         record = {}
@@ -45,12 +46,13 @@ YIELD rel
 RETURN distinct 'done' AS result;
 """
 
+# ???: create driver session for each process? ; so create driver session for each ray_id?
 def run_query(driver, query, params={}):
     with driver.session() as session:
         result = session.run(query, params)
         return pd.DataFrame([r.values() for r in result], columns=result.keys())
 
-# call ray
+@ray.remote
 def store_content(driver, coref, rel_ext, file):
     #try:
     file_id = file.split("/")[-1].split(".")[0]

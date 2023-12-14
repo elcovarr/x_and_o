@@ -1,7 +1,10 @@
 import RebelComponent as RC
 import GroupsHelper as GH
- 
+import ray
+
 def main():
+    ray.init()
+
     DEVICE = -1 # Number of the GPU, -1 if want to use CPU
     DIR = "groups" # directory with files
 
@@ -22,15 +25,23 @@ def main():
     driver = GH.create_driver()
     
     # Change to json for driver to read & when creating triples
-    GH.txt_to_json(DIR)
+    txt_to_json_tasks = [GH.txt_to_json.remote(DIR)]
+    ray.get(txt_to_json_tasks)
 
     # Get all json files
+    # ???: ray it?
     files = GH.glob.glob(DIR + '/*.json')
 
     # Store graph in Neo4j driver made using coref and rel_ext
+    store_content_tasks = []
     for file in files:
-        print(f"Parsing {file}")
-        GH.store_content(driver, coref, rel_ext, file)
+            print(f"Parsing {file}")
+            store_content_tasks.append(GH.store_content.remote(driver, coref, rel_ext, file))
+    ray.get(store_content_tasks)
+
+
+
+    ray.shutdown()
 
 if __name__ == "__main__":
     main()
