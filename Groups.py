@@ -37,17 +37,15 @@ def main():
 
     # Create second model
     # TODO: change parameters
-    coref2 = XO.spacy.load('en_core_web_lg', disable=['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer'])
-    model_coref2 = ray.put(coref2)
-    rel_ext2 = XO.spacy.load('en_core_web_sm', disable=['ner', 'lemmatizer', 'attribute_rules', 'tagger'])
-    model_rel2 = ray.put(rel_ext2)
 
-    # Run second model
-    store_content_tasks2 = []
+    # Store graph in Neo4j driver with info in creating coref and rel_ext models
+    cinfo2 = {'name': 'en_core_web_lg', 'disable':['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer']}
+    rinfo2 = {'name': 'en_core_web_sm', 'disable': ['ner', 'lemmatizer', 'attribute_rules', 'tagger']}
+    store_content_tasks1 = []
     for file in files:
             print(f"Parsing {file}")
-            store_content_tasks2.append(XO.store_content.remote(driver, model_coref1, model_rel1, file))
-    ray.get(store_content_tasks2)
+            store_content_tasks1.append(XO.store_content.remote(driver, cinfo2, rinfo2, file))
+    ray.get(store_content_tasks1)
 
 
     # Shutdown ray
