@@ -9,7 +9,7 @@ def main():
     # Initialize ray
     ray.init()
 
-    # DEVICE = -1 # Number of the GPU, -1 if want to use CPU
+    DEVICE = -1 # Number of the GPU, -1 if want to use CPU
     DIR = "groups" # directory with files
 
     # Create Neo4j driver
@@ -29,7 +29,7 @@ def main():
     store_content_tasks1 = []
     for file in files:
             print(f"Parsing {file}")
-            store_content_tasks1.append(XO.store_content.remote(driver, cinfo, rinfo, file))
+            store_content_tasks1.append(XO.store_content.remote(driver, DEVICE,  cinfo, rinfo, file))
     ray.get(store_content_tasks1)
 
 
@@ -44,7 +44,7 @@ def main():
     store_content_tasks1 = []
     for file in files:
             print(f"Parsing {file}")
-            store_content_tasks1.append(XO.store_content.remote(driver, cinfo2, rinfo2, file))
+            store_content_tasks1.append(XO.store_content.remote(driver, DEVICE, cinfo2, rinfo2, file))
     ray.get(store_content_tasks1)
 
 
