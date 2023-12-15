@@ -20,7 +20,7 @@ def create_driver():
 # call ray
 @ray.remote
 def txt_to_json(DIR):
-    for file in glob.glob(DIR+"/*.txt"):
+    for file in glob.glob("../" + DIR+"/*.txt"):
         record = {}
         record['title'] = file.split("/")[-1]
         content = open(file).read()
@@ -54,7 +54,7 @@ def run_query(driver, query, params={}):
         result = session.run(query, params)
         return pd.DataFrame([r.values() for r in result], columns=result.keys())
 
-@ray.remote
+# @ray.remote
 def store_content(driver, DEVICE, cinfo, rinfo,  file):
     #try:
     file_id = file.split("/")[-1].split(".")[0]
@@ -87,4 +87,3 @@ def store_content(driver, DEVICE, cinfo, rinfo,  file):
             print("Failed")
     #except Exception as e:
     #  print(f"Couldn't parse text for {page} due to {e}")
-   

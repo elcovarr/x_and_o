@@ -7,7 +7,7 @@ import glob
 def main():
 
     # Initialize ray
-    ray.init()
+    ray.init(object_store_memory=78643200,  ignore_reinit_error = True)
 
     DEVICE = -1 # Number of the GPU, -1 if want to use CPU
     DIR = "groups" # directory with files
@@ -29,23 +29,23 @@ def main():
     store_content_tasks1 = []
     for file in files:
             print(f"Parsing {file}")
-            store_content_tasks1.append(XO.store_content.remote(driver, DEVICE,  cinfo, rinfo, file))
-    ray.get(store_content_tasks1)
+            store_content_tasks1.append(XO.store_content(driver, DEVICE,  cinfo, rinfo, file))
+    # ray.get(store_content_tasks1)
 
 
-    # ------------------ ------------------ ------------------ ------------------ ------------------ #
+#     # ------------------ ------------------ ------------------ ------------------ ------------------ #
 
-    # Create second model
-    # TODO: change parameters
+#     # Create second model
+#     # TODO: change parameters
 
-    # Store graph in Neo4j driver with info in creating coref and rel_ext models
-    cinfo2 = {'name': 'en_core_web_lg', 'disable':['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer']}
-    rinfo2 = {'name': 'en_core_web_sm', 'disable': ['ner', 'lemmatizer', 'attribute_rules', 'tagger']}
-    store_content_tasks1 = []
-    for file in files:
-            print(f"Parsing {file}")
-            store_content_tasks1.append(XO.store_content.remote(driver, DEVICE, cinfo2, rinfo2, file))
-    ray.get(store_content_tasks1)
+#     # Store graph in Neo4j driver with info in creating coref and rel_ext models
+#     cinfo2 = {'name': 'en_core_web_lg', 'disable':['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer']}
+#     rinfo2 = {'name': 'en_core_web_sm', 'disable': ['ner', 'lemmatizer', 'attribute_rules', 'tagger']}
+#     store_content_tasks1 = []
+#     for file in files:
+#             print(f"Parsing {file}")
+#             store_content_tasks1.append(XO.store_content.remote(driver, DEVICE, cinfo2, rinfo2, file))
+#     ray.get(store_content_tasks1)
 
 
     # Shutdown ray
