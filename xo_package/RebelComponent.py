@@ -4,7 +4,7 @@ import re
 import hashlib
 from spacy import Language
 from typing import List
-from NLP_RelationExtraction import extract_triplets
+from xo_package.NLP_RelationExtraction import extract_triplets
 
 from spacy.tokens import Doc, Span
 

@@ -1,3 +1,5 @@
+import xo_package.RebelComponent as RC
+
 import pandas as pd
 from neo4j import GraphDatabase
 
@@ -53,11 +55,24 @@ def run_query(driver, query, params={}):
         return pd.DataFrame([r.values() for r in result], columns=result.keys())
 
 @ray.remote
-def store_content(driver, coref, rel_ext, file):
+def store_content(driver, DEVICE, cinfo, rinfo,  file):
     #try:
     file_id = file.split("/")[-1].split(".")[0]
     f = open(file)
     doc = json.load(f)
+    
+    # Add coreference resolution model
+    coref = RC.spacy.load(cinfo['name'], disable=cinfo['disable'])
+    coref.add_pipe(
+        "xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": DEVICE})
+    
+    # Define rel extraction model
+    rel_ext = RC.spacy.load(rinfo['name'], disable=rinfo['disable'])
+    rel_ext.add_pipe("rebel", config={
+        'device':DEVICE, # Number of the GPU, -1 if want to use CPU
+        'model_name':'Babelscape/rebel-large'} # Model used, will default to 'Babelscape/rebel-large' if not given
+        )
+    
     # call ray
     for input_text in doc["text"].split("\n\n"):
         print(input_text[:100])

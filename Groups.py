@@ -1,47 +1,59 @@
-import RebelComponent as RC
-import GroupsHelper as GH
+#import xo_package.RebelComponent as RC
+#import xo_package.GroupsHelper as GH
+import xo_package as XO
 import ray
+import glob
 
 def main():
+
+    # Initialize ray
     ray.init()
 
-    DEVICE = -1 # Number of the GPU, -1 if want to use CPU
+    # DEVICE = -1 # Number of the GPU, -1 if want to use CPU
     DIR = "groups" # directory with files
 
-    # Add coreference resolution model
-    # NOTE: model is defined as 'en_core_web_lg'
-    coref = RC.spacy.load('en_core_web_lg', disable=['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer'])
-    coref.add_pipe(
-        "xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": DEVICE})
-
-    # Define rel extraction model
-    rel_ext = RC.spacy.load('en_core_web_sm', disable=['ner', 'lemmatizer', 'attribute_rules', 'tagger'])
-    rel_ext.add_pipe("rebel", config={
-        'device':DEVICE, # Number of the GPU, -1 if want to use CPU
-        'model_name':'Babelscape/rebel-large'} # Model used, will default to 'Babelscape/rebel-large' if not given
-        )
-    
     # Create Neo4j driver
-    driver = GH.create_driver()
+    driver = XO.create_driver()
     
     # Change to json for driver to read & when creating triples
-    txt_to_json_tasks = [GH.txt_to_json.remote(DIR)]
+    txt_to_json_tasks = [XO.txt_to_json.remote(DIR)]
     ray.get(txt_to_json_tasks)
 
     # Get all json files
     # ???: ray it?
-    files = GH.glob.glob(DIR + '/*.json')
+    files = glob.glob(DIR + '/*.json')
 
-    # Store graph in Neo4j driver made using coref and rel_ext
-    store_content_tasks = []
+    # Store graph in Neo4j driver with info in creating coref and rel_ext models
+    cinfo = {'name': 'en_core_web_lg', 'disable':['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer']}
+    rinfo = {'name': 'en_core_web_sm', 'disable': ['ner', 'lemmatizer', 'attribute_rules', 'tagger']}
+    store_content_tasks1 = []
     for file in files:
             print(f"Parsing {file}")
-            store_content_tasks.append(GH.store_content.remote(driver, coref, rel_ext, file))
-    ray.get(store_content_tasks)
+            store_content_tasks1.append(XO.store_content.remote(driver, cinfo, rinfo, file))
+    ray.get(store_content_tasks1)
 
 
+    # ------------------ ------------------ ------------------ ------------------ ------------------ #
 
+    # Create second model
+    # TODO: change parameters
+    coref2 = XO.spacy.load('en_core_web_lg', disable=['ner', 'tagger', 'parser', 'attribute_ruler', 'lemmatizer'])
+    model_coref2 = ray.put(coref2)
+    rel_ext2 = XO.spacy.load('en_core_web_sm', disable=['ner', 'lemmatizer', 'attribute_rules', 'tagger'])
+    model_rel2 = ray.put(rel_ext2)
+
+    # Run second model
+    store_content_tasks2 = []
+    for file in files:
+            print(f"Parsing {file}")
+            store_content_tasks2.append(XO.store_content.remote(driver, model_coref1, model_rel1, file))
+    ray.get(store_content_tasks2)
+
+
+    # Shutdown ray
     ray.shutdown()
+
+    return
 
 if __name__ == "__main__":
     main()
