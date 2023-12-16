@@ -2,9 +2,9 @@
 import requests
 import re
 import hashlib
-from spacy import Language
+from spacy import Language, load
 from typing import List
-from NLP_RelationExtraction import extract_triplets
+from xo_package.NLP_RelationExtraction import extract_triplets
 
 from spacy.tokens import Doc, Span
 
@@ -19,6 +19,24 @@ def call_wiki_api(item):
   except:
     return 'id-less'
 
+
+def coref(cinfo, DEVICE):
+    # Add coreference resolution model
+    coref = load(cinfo['name'], disable=cinfo['disable'])
+    coref.add_pipe(
+        "xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": DEVICE})
+    return  coref  
+
+
+def rel_ext(rinfo, DEVICE):
+       # Define rel extraction model
+    rel_ext = load(rinfo['name'], disable=rinfo['disable'])
+    rel_ext.add_pipe("rebel", config={
+        'device':DEVICE, # Number of the GPU, -1 if want to use CPU
+        'model_name':'Babelscape/rebel-large'} # Model used, will default to 'Babelscape/rebel-large' if not given
+        )
+
+    return rel_ext
 
 @Language.factory(
     "rebel",

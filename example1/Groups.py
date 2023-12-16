@@ -16,8 +16,8 @@ def main():
     driver = XO.create_driver()
     
     # Change to json for driver to read & when creating triples
-    txt_to_json_tasks = [XO.txt_to_json.remote(DIR)]
-    ray.get(txt_to_json_tasks)
+    # txt_to_json_tasks = [XO.txt_to_json.remote(DIR)]
+    # ray.get(txt_to_json_tasks)
 
     # Get all json files
     # ???: ray it?
