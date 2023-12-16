@@ -15,7 +15,7 @@ def create_driver():
     host = 'bolt://127.0.0.1:7687'
     user = 'neo4j'
     password = '12345678'
-    return GraphDatabase.driver(host,auth=(user, password))
+    return Neo4jDriverActor.remote(host, user, password)
 
 
 # Change txt files to json files
@@ -49,11 +49,7 @@ YIELD rel
 RETURN distinct 'done' AS result;
 """
 
-# ???: create driver session for each process? ; so create driver session for each ray_id?
-def run_query(driver, query, params={}):
-    with driver.session() as session:
-        result = session.run(query, params)
-        return pd.DataFrame([r.values() for r in result], columns=result.keys())
+
 
 def store_content(driver, DEVICE, cinfo, rinfo,  file):
     #try:
@@ -80,7 +76,7 @@ def train(driver, file_id, input_text, coref, rel_ext):
         params = [rel_dict for value, rel_dict in doc._.rel.items()]
         for p in params:
             p['file_id'] = file_id
-        run_query(driver, import_query, {'data': params})
+        ray.get(driver.run_query.remote(import_query, {'data': params}))
     except Exception as e:
         print(f"Failed: {e}")
 # def train(driver, file_id, doc, coref, rel_ext):
@@ -96,7 +92,13 @@ def train(driver, file_id, input_text, coref, rel_ext):
 #         except:
 #             print("Failed")
 
-    #TODO PUT FOR LOOP BACK IN store_content
-    # add each ray.remote to an array and get at end of loop
-    #except Exception as e:
-    #  print(f"Couldn't parse text for {page} due to {e}")
+@ray.remote
+class Neo4jDriverActor:
+    def __init__(self, host, user, password):
+        self.driver = GraphDatabase.driver(host, auth=(user, password))
+
+    # ???: create driver session for each process? ; so create driver session for each ray_id?
+    def run_query(self, query, params={}):
+        with self.driver.session() as session:
+            result = session.run(query, params)
+            return pd.DataFrame([r.values() for r in result], columns=result.keys())
